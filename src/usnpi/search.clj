@@ -15,8 +15,9 @@
                "}'")]
     `(db/raw ~s)))
 
-(defn build-where [where {:keys [postal-codes state city]}]
+(defn build-where [where {:keys [ids postal-codes state city]}]
   (cond-> where
+    ids          (conj [:in    :id ids])
     city         (conj [:ilike (resource :address 0 :city) (str "%" city "%")])
     state        (conj [:=     (resource :address 0 :state) state])
     postal-codes (conj [:in    (resource :address 0 :postalCode) postal-codes])))
@@ -87,6 +88,7 @@
 
 (defn search [{params :params}]
   (let [params (-> params
+                   (update :ids as-vector)
                    (update :postal-codes as-vector)
                    (update :taxonomies as-vector)
                    (update :count normalize-count))
@@ -96,4 +98,9 @@
               (and p-sql o-sql) (union p-sql o-sql)
               p-sql             (wrap-query p-sql)
               o-sql             (wrap-query o-sql))]
+
+    ; (println ">>> Search params: " params)
+    ; (println ">>> p-sql: " p-sql)
+    ; (println ">>> o-sql: " o-sql)
+
     (http/http-resp (npi/as-bundle (db/query (db/to-sql sql))))))

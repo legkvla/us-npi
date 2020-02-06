@@ -77,7 +77,8 @@
       wrap-webjars))
 
 (defn start-server [& [{:keys [port] :as opt}]]
-  (let [port (or port 8080)]
+  (println "Port from config: " port)
+  (let [port (or port (:port env) 8080)]
     (log/infof "Starting server on port %s..." port)
     (server/run-server app {:port port})))
 
