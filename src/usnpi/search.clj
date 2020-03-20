@@ -3,7 +3,6 @@
             [usnpi.db :as db]
             [usnpi.npi :as npi]
             [honeysql.format :as sqlf]
-            [cheshire.core :as json]
             [clojure.string :as str]))
 
 (defmacro resource [& fields]
