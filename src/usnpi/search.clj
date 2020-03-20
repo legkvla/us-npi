@@ -3,6 +3,7 @@
             [usnpi.db :as db]
             [usnpi.npi :as npi]
             [honeysql.format :as sqlf]
+            [cheshire.core :as json]
             [clojure.string :as str]))
 
 (defmacro resource [& fields]
@@ -36,6 +37,15 @@
     query
     (update query :select conj [type :type])))
 
+(defn taxonomy-check [taxonomies]
+   (db/raw (str "resource @?? '$.qualification[*].code.coding[*].code ? (" (str/join " || " (for [t taxonomies] (str "@ == \"" t "\""))) ")'::jsonpath")))
+
+(defn first-name-check [first-name]
+  (db/raw (str "resource @?? '$.name[*].given[*] ? (@ starts with \"" (str/upper-case first-name) "\")'::jsonpath")))
+
+(defn family-name-check [family-name]
+  (db/raw (str "resource @?? '$.name[*].family ? (@ starts with \"" (str/upper-case family-name) "\")'::jsonpath")))
+
 (defn build-practitioner-sql [{:keys [name first-name last-name taxonomies] :as params}]
   (when-not (only-organization? params)
     (let [family     (or name last-name)
@@ -44,9 +54,9 @@
       (-> {:select [:id :resource [name-col :name]]
            :from [:practitioner]
            :where (cond-> [:and [:= :deleted false]]
-                    family       (conj [:ilike name-col (str family "%")])
-                    first-name   (conj [:ilike (resource :name 0 :given) (str "%" first-name "%")])
-                    taxonomies   (conj [:in    (resource :qualification 0 :code :coding 0 :code) taxonomies])
+                    family       (conj (family-name-check family))
+                    first-name   (conj (first-name-check first-name))
+                    taxonomies   (conj (taxonomy-check taxonomies))
                     :always      (build-where params))}
           (with-count params)
           (with-type params only-practitioner? 1)))))
@@ -59,7 +69,7 @@
            :from [:organizations]
            :where (cond-> [:and [:= :deleted false]]
                     org          (conj [:ilike name-col (str "%" org "%")])
-                    taxonomies   (conj [:in    (resource :type 0 :coding 0 :code) taxonomies])
+                    taxonomies   (conj (taxonomy-check taxonomies))
                     :always      (build-where params))}
           (with-count params)
           (with-type params only-organization? 2)))))
