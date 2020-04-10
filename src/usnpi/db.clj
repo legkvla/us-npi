@@ -155,9 +155,16 @@
   (migratus/migrate mg-cfg)
   (log/info "Migrations done."))
 
+(defn supported-postgres-version? []
+  "Ensure that the database server is correct version"
+  ; PostgreSQL 12 is required for json_path_exists() operation
+  (-> (query "SHOW server_version_num;") (first) :server_version_num (Integer.) (> 120000))
+  )
+
 ;;
 ;; Init part
 ;;
 
 (defn init []
+  (assert (supported-postgres-version?))
   (migrate))

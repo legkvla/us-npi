@@ -7,7 +7,7 @@
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [cheshire "5.6.3"]
                  [org.clojure/java.jdbc "0.6.1"]
-                 [http-kit "2.2.0"]
+                 [http-kit "2.3.0"]
                  [clj-time "0.14.2"]
                  [clj-yaml "0.4.0"]
                  [cprop "0.1.11"]
